@@ -6,9 +6,9 @@ from feedwerk.atom import AtomFeed
 from jinja2 import Environment, FileSystemLoader, filters
 
 import config
-from thairath_news import summary_cache, translation
-from thairath_news.news import SummaryModel
-from thairath_news.parser import ThairathNewsParser
+from hacker_news import summary_cache, translation
+from hacker_news.news import SummaryModel
+from hacker_news.parser import HackerNewsParser
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +43,13 @@ def gen_page(news_list):
 
 
 def gen_feed(news_list):
-    feed = AtomFeed('Thairath News Summary',
+    feed = AtomFeed('Hacker News Summary',
                     updated=datetime.utcnow(),
                     feed_url=f'{config.site}/feed.xml',
                     url={config.site},
                     author={
-                        'name': 'ThairathNewsParser',
-                        'uri': 'https://github.com/ThairathNewsParser/'}
+                        'name': 'polyrabbit',
+                        'uri': 'https://github.com/polyrabbit/'}
                     )
     for i, news in enumerate(news_list):
         img_tag = ''
@@ -76,7 +76,7 @@ def gen_feed(news_list):
 
 
 if __name__ == '__main__':
-    hn = ThairathNewsParser()
+    hn = HackerNewsParser()
     news_list = hn.parse_news_list()
     for news in news_list:
         news.pull_content()
