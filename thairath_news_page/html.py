@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup as BS, Tag, NavigableString
 from markupsafe import escape
 from math import sqrt
 from null import Null
-
+from . import get_news_detail
 import config
 from .utils import tokenize, string_inclusion_ratio
 from .webimage import WebImage
@@ -333,6 +333,13 @@ class HtmlContentExtractor(object):
             if img.is_candidate:
                 logger.info('Found a top image %s', img.url)
                 return img
+            else:
+                logger.info('Found a top image %s, but it is not qualified', img.url)
+                # 提取 self.url path 
+                from urllib.parse import urlparse
+                parsed_url = urlparse(self.url)
+                path = parsed_url.path
+                img.url = get_news_detail(path)["thumbnail"]["image"]
         # Only as a fallback, github use user's avatar as their meta_images
         if self.get_meta_image():
             img = WebImage.from_attrs(src=self.get_meta_image(), referrer=self.url)

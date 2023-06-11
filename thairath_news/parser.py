@@ -32,7 +32,7 @@ class ThairathNewsParser(object):
             logger.info('Gotta %s', title)
             url = news_item['canonical']
             comhead = news_item['sectionEn']
-            score = "20"
+            score = "21"
             author = "thairath"
             author_link = "https://www.thairath.co.th/"
             submit_time = self.convert_timestamp_to_utc_datetime(news_item['publishTs'])
