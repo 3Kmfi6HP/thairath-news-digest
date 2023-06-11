@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% set title = 'Hacker News Summary - by ChatGPT'|translate(lang) %}
+{% set site = 'hackernews' %}
+{% set description = 'Hacker News Summary leverages AI technology to extract summaries and illustrations from Hacker News articles, providing a seamless news scanning experience.' %}
+
+{% block head %}
+    <meta name="description" content="{{ description }}">
+    <link rel="canonical" href="https://hackernews.betacat.io/"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="{{ title }}"/>
+    <meta name="twitter:description" content="{{ description }}"/>
+    {{ super() }}
+{% endblock %}
+
+{% block nav_brand %}
+    <a class="navbar-brand" href="#">Hacker News Summary</a>
+{% endblock %}
+
+{% block nav_links %}
+    <li>
+        <a href="https://news.ycombinator.com/news" target="_blank" title="Hacker News front page">Front</a>
+    </li>
+    <li>
+        <a href="https://news.ycombinator.com/front" target="_blank" title="Hacker News front page before">Past</a>
+    </li>
+    <li>
+        <a href="https://news.ycombinator.com/newcomments" target="_blank" title="Discussions on Hacker News">Comments</a>
+    </li>
+    <li>
+        <a href="https://news.ycombinator.com/show" target="_blank" title="Show HN">Show</a>
+    </li>
+{% endblock %}

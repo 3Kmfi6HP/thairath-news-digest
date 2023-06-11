@@ -1,0 +1,105 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
+  repository_dispatch:
+    types: [ generate-gh-pages ]
+
+    # schedule:
+    # - cron: "*/10 * * * *"
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true # Avoid batch pending when one job hangs
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      TOKENIZERS_PARALLELISM: false
+      DISABLE_SUMMARY_CACHE: ${{ vars.DISABLE_SUMMARY_CACHE }}
+      DISABLE_TRANSFORMER: ${{ vars.DISABLE_TRANSFORMER }}
+      TRANSFORMER_MODEL: ${{ vars.TRANSFORMER_MODEL }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      #      - name: Dump GitHub Context
+      #        env:
+      #          GITHUB_CONTEXT: ${{ toJson(github) }}
+      #        run: echo "$GITHUB_CONTEXT"
+      - name: My Host
+        run: |
+          free -h
+          df -h
+          nproc
+          curl -s ifconfig.me/all
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4.3.0
+        with:
+          python-version: 3.9
+          # cache: 'pip'
+
+      # https://blog.allenai.org/python-caching-in-github-actions-e9452698e98d
+      - name: Python Runtime Cache
+        id: python-runtime-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+
+      - name: Huggingface Model Cache
+        id: huggingface-model-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/huggingface/hub/models*
+          key: ${{ runner.os }}-huggingface
+
+      - name: Install Python Dependencies
+        run: pip install --upgrade -r requirements.txt
+
+      - name: Unit Test
+        run: python -m unittest
+        if: ${{ github.event_name == 'push' }}
+
+      - name: Generate Pages
+        run: make gh_pages
+        env:
+          DISABLE_ADS: ${{ vars.DISABLE_ADS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_SCORE_THRESHOLD: ${{ vars.OPENAI_SCORE_THRESHOLD }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: 'output'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+        if: ${{ success() }}

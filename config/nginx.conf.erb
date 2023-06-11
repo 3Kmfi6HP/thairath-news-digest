@@ -1,0 +1,79 @@
+# https://github.com/ryandotsmith/nginx-buildpack
+daemon off;
+#Heroku dynos have at least 4 cores.
+worker_processes <%= ENV['NGINX_WORKERS'] || 4 %>;
+
+events {
+	use epoll;
+	accept_mutex on;
+	worker_connections 1024;
+}
+
+http {
+    gzip on;
+    gzip_comp_level 2;
+    gzip_min_length 512;
+    gzip_vary on;
+    gzip_disable msie6;
+    # Also for HTTP 1.0
+    gzip_http_version 1.0;
+    gzip_types text/plain application/x-javascript text/xml text/css;
+
+    server_tokens off;
+
+    log_format heroku_log '$http_x_forwarded_for - [$time_local] ' '"$request" $status $body_bytes_sent "$http_referer" ' '"$http_user_agent"';
+
+	access_log logs/nginx/access.log heroku_log;
+	error_log logs/nginx/error.log;
+
+	include mime.types;
+	default_type application/octet-stream;
+	sendfile on;
+
+	#Must read the body in 5 seconds.
+	client_body_timeout 5;
+
+	upstream app_server {
+		server unix:/tmp/nginx.socket fail_timeout=0;
+ 	}
+
+	server {
+		listen <%= ENV["PORT"] || 80 %> default_server;
+        server_name hackernews.betacat.io;
+		keepalive_timeout 5;
+
+		location / {
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header Host $http_host;
+			proxy_redirect off;
+			proxy_pass http://app_server;
+		}
+
+        location /static/ {
+            alias <%= Dir.pwd %>/static/;
+            expires 1d;
+        }
+
+        location /favicon.ico {
+            root <%= Dir.pwd %>/static/;
+            expires 1d;
+        }
+
+        location /sitemap.xml {
+            root <%= Dir.pwd %>/static/;
+            expires 1d;
+        }
+
+        location /ads.txt {
+            root <%= Dir.pwd %>/static/;
+            expires 1d;
+        }
+
+	}
+
+    server {
+		listen <%= ENV["PORT"] || 80 %>;
+        server_name the-hacker-news.herokuapp.com www.hackernews.im hackernews.im;
+        rewrite  ^/(.*)$ http://hackernews.betacat.io/$1 permanent;
+    }
+}
