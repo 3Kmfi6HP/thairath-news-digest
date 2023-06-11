@@ -7,7 +7,7 @@ from urllib.parse import urljoin, urlsplit
 from bs4 import BeautifulSoup as BS
 from null import Null
 
-from hacker_news.news import News
+from thairath_news.news import News
 from page_content_extractor import ParseError
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ from config import sites_for_users
 from page_content_extractor.http import session
 
 
-class HackerNewsParser(object):
+class ThairathNewsParser(object):
     end_point = 'https://news.ycombinator.com/'
 
     def parse_news_list(self):

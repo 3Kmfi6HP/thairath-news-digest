@@ -11,7 +11,7 @@ from summarizer import Summarizer
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 import config
-from hacker_news import summary_cache, translation
+from thairath_news import summary_cache, translation
 from page_content_extractor import parser_factory
 
 logger = logging.getLogger(__name__)
