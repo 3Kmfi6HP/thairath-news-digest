@@ -3,7 +3,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlsplit
-
+import requests
 from bs4 import BeautifulSoup as BS
 from null import Null
 
@@ -17,39 +17,28 @@ from page_content_extractor.http import session
 
 
 class ThairathNewsParser(object):
-    end_point = 'https://news.ycombinator.com/'
+    end_point = 'https://thairath-api.chronisftl.workers.dev/news/'
 
     def parse_news_list(self):
-        content = session.get(self.end_point).text
-        dom = BS(content, features="lxml")
+        response = requests.get(self.end_point)
+        if response.status_code != 200:
+            raise ValueError(f"Unable to fetch data from API, status code: {response.status_code}")
+
+        news_data = response.json()
         items = []
-        for rank, item_line in enumerate(
-                dom.select('table tr table tr.athing')):
-            # previous_sibling won't work when there are spaces between them.
-            subtext_dom = item_line.find_next_sibling('tr')
-            title_dom = item_line.find('td', class_='title', align=False)
 
-            title = title_dom.a.get_text(strip=True)
+        for rank, news_item in enumerate(news_data):
+            title = news_item['title']
             logger.info('Gotta %s', title)
-            url = urljoin(self.end_point, title_dom.a['href'])
-            # In case of a discussion on hacker news, such as
-            # 9.  Let discuss here
-            # comhead = title_dom.span and title_dom.span.get_text(strip=True).strip('()') or None
-            comhead = self.parse_comhead(url)
-
-            # pop up user first, so everything left has a pattern
-            author_dom = (subtext_dom.find('a', href=re.compile(r'^user', re.I)) or Null).extract()
-            author = author_dom.text.strip() or None
-            author_link = author_dom['href'] or None
-            score_human = subtext_dom.find(string=re.compile(r'\d+.+point')) or '0'
-            score = re.search(r'\d+', score_human).group() or None
-            submit_time = subtext_dom.find(string=re.compile(r'\d+ \w+ ago')) or None
-            if submit_time:
-                submit_time = self.human2datetime(submit_time)
-            # In case of no comments yet
-            comment_dom = subtext_dom.find('a', string=re.compile(r'\d+.+comment')) or Null
-            comment_cnt = re.search(r'\d+', comment_dom.get_text() or '0').group()
-            comment_url = self.get_comment_url(comment_dom['href'])
+            url = news_item['canonical']
+            comhead = news_item['sectionEn']
+            score = "20"
+            author = "thairath"
+            author_link = "https://www.thairath.co.th/"
+            submit_time = self.convert_timestamp_to_utc_datetime(news_item['publishTs'])
+            comment_cnt = None
+            comment_url = None
+            full_path = news_item['fullPath']
 
             items.append(News(
                 rank=rank,
@@ -58,15 +47,20 @@ class ThairathNewsParser(object):
                 comhead=comhead,
                 score=score,
                 author=author,
-                author_link=urljoin(self.end_point, author_link) if author_link else None,
+                author_link=author_link,
                 submit_time=submit_time,
                 comment_cnt=comment_cnt,
-                comment_url=comment_url
+                comment_url=comment_url,
+                full_path=full_path
             ))
-        if len(items) == 0:
-            raise ParseError('failed to parse hacker news page, got 0 item, text %s' % content)
-        return items
 
+        if len(items) == 0:
+            raise ValueError('failed to parse hacker news page, got 0 item')
+
+        return items
+    def convert_timestamp_to_utc_datetime(self, timestamp):
+        return datetime.utcfromtimestamp(timestamp)
+    
     def parse_comhead(self, url):
         if not url.startswith('http'):
             url = 'http://' + url

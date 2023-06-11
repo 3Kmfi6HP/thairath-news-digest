@@ -8,7 +8,7 @@ from page_content_extractor import session
 logger = logging.getLogger(__name__)
 
 translation_cache = {
-    'Hacker News Summary - by ChatGPT': {'zh': 'Hacker News 摘要 - ChatGPT 强力驱动'},
+    'Thairath News Summary': {'zh': 'Thairath News 摘要'},
     'Translate': {'zh': '翻译'}
 }
 

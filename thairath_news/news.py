@@ -12,7 +12,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 import config
 from thairath_news import summary_cache, translation
-from page_content_extractor import parser_factory
+from thairath_news_page import parser_factory, get_news_detail
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class SummaryModel(Enum):
 class News:
 
     def __init__(self, rank=-1, title='', url='', comhead='', score='', author='',
-                 author_link='', submit_time='', comment_cnt='', comment_url=''):
+                 author_link='', submit_time='', comment_cnt='', comment_url='', full_path=''):
         self.rank = rank
         self.title = title.strip()
         self.url = url
@@ -55,9 +55,12 @@ class News:
         self.favicon = ''
         self.image = None
         self.img_id = None
+        self.full_path = full_path
 
     def get_image_url(self):
         if self.image and self.image.url:
+            detail = get_news_detail(self.full_path)
+            self.image.url = detail["thumbnail"]["image"]
             return self.image.url
         return ''
 
@@ -65,12 +68,16 @@ class News:
         try:
             logger.info("#%d, fetching %s", self.rank, self.url)
             parser = parser_factory(self.url)
-            if not self.title:
-                self.title = parser.title.strip()
+            # if not self.title:
+                # self.title = parser.title.strip()
             self.favicon = parser.get_favicon_url()
             # Replace consecutive spaces with a single space
-            self.content = re.sub(r'\s+', ' ', parser.get_content(config.max_content_size))
+            # self.content = re.sub(r'\s+', ' ', parser.get_content(config.max_content_size))
+            self.content = re.sub(r'\s+', ' ', get_news_detail(self.full_path)["content"])
+            # remove any html tag in content
+            self.content = re.sub(r'<[^>]+>', '', self.content)
             self.summary = self.summarize()
+            self.image = self.get_image_url()
             tm = parser.get_illustration()
             if tm:
                 fname = tm.uniq_name()
