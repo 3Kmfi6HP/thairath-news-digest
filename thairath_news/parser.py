@@ -17,7 +17,7 @@ from page_content_extractor.http import session
 
 
 class ThairathNewsParser(object):
-    end_point = 'https://thairath-api.chronisftl.workers.dev/news/'
+    end_point = 'https://thairath-api.chronisftl.workers.dev/news/local/bangkok/'
 
     def parse_news_list(self):
         response = requests.get(self.end_point)
